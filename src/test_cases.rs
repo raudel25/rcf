@@ -1,3 +1,4 @@
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -22,7 +23,11 @@ impl TestCase {
         }
     }
 
-    pub fn create(&self, path: &String) -> std::io::Result<()> {
+    pub fn create(&self, path: &str) -> std::io::Result<()> {
+        if !fs::metadata(&path).is_ok() {
+            fs::create_dir_all(&path)?;
+        }
+
         let mut f_in = File::create(format!("{}/{}.in", path, self.name))?;
         f_in.write_all(self.input.as_bytes())?;
 
@@ -87,7 +92,7 @@ fn extract_example_test_cases(html_content: &str) -> Result<Vec<TestCase>, Strin
     }
 }
 
-async fn response(contest_id: i32, problem_index: String) -> Result<String, Error> {
+async fn response(contest_id: i32, problem_index: &str) -> Result<String, Error> {
     let url = format!(
         "https://codeforces.com/contest/{}/problem/{}",
         contest_id, problem_index
@@ -97,7 +102,7 @@ async fn response(contest_id: i32, problem_index: String) -> Result<String, Erro
     Ok(html_response)
 }
 
-pub fn get_test_cases(contest_id: i32, problem_index: String) -> Result<Vec<TestCase>, String> {
+pub fn get_test_cases(contest_id: i32, problem_index: &str) -> Result<Vec<TestCase>, String> {
     let runtime = tokio::runtime::Runtime::new().unwrap();
 
     match runtime.block_on(response(contest_id, problem_index)) {
