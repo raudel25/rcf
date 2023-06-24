@@ -7,22 +7,22 @@ extern crate scraper;
 use reqwest::Error;
 use scraper::{ElementRef, Html, Selector};
 
-pub struct Case {
+pub struct TestCase {
     name: String,
     input: String,
     output: String,
 }
 
-impl Case {
-    pub fn new(name: String, input: String, output: String) -> Case {
-        Case {
+impl TestCase {
+    pub fn new(name: String, input: String, output: String) -> TestCase {
+        TestCase {
             name,
             input,
             output,
         }
     }
 
-    pub fn create(&self, path: String) -> std::io::Result<()> {
+    pub fn create(&self, path: &String) -> std::io::Result<()> {
         let mut f_in = File::create(format!("{}/{}.in", path, self.name))?;
         f_in.write_all(self.input.as_bytes())?;
 
@@ -33,10 +33,19 @@ impl Case {
     }
 }
 
-fn get_lines(e: ElementRef) -> Vec<String> {
+fn get_lines(e: ElementRef) -> String {
     let div_selector = Selector::parse("div").unwrap();
 
-    e.select(&div_selector).map(|e| e.inner_html()).collect()
+    let lines = e
+        .select(&div_selector)
+        .map(|e| e.inner_html())
+        .collect::<Vec<_>>();
+
+    if lines.len() != 0 {
+        vec_to_lines(lines)
+    } else {
+        e.inner_html()
+    }
 }
 
 fn vec_to_lines(lines: Vec<String>) -> String {
@@ -50,7 +59,7 @@ fn vec_to_lines(lines: Vec<String>) -> String {
     aux
 }
 
-fn extract_example_test_cases(html_content: &str) -> Vec<Case> {
+fn extract_example_test_cases(html_content: &str) -> Result<Vec<TestCase>, String> {
     let document = Html::parse_document(html_content);
     let example_selector = Selector::parse(".sample-test").unwrap();
     let input_selector = Selector::parse(".input pre").unwrap();
@@ -69,27 +78,30 @@ fn extract_example_test_cases(html_content: &str) -> Vec<Case> {
             .collect::<Vec<_>>();
 
         for (i, (input, output)) in inputs.into_iter().zip(outputs.into_iter()).enumerate() {
-            cases.push(Case::new(
-                format!("case{}", i),
-                vec_to_lines(input),
-                vec_to_lines(output),
-            ));
+            cases.push(TestCase::new(format!("case{}", i + 1), input, output));
         }
-    } else {
-        println!("No example test cases found.");
-    }
 
-    cases
+        Ok(cases)
+    } else {
+        Err(String::from("No example test cases found"))
+    }
 }
 
-pub async fn get_test_cases(contest_id: i32, problem_index: String) -> Result<(), Error> {
+async fn response(contest_id: i32, problem_index: String) -> Result<String, Error> {
     let url = format!(
         "https://codeforces.com/contest/{}/problem/{}",
         contest_id, problem_index
     );
     let html_response = reqwest::get(&url).await?.text().await?;
 
-    extract_example_test_cases(&html_response);
+    Ok(html_response)
+}
 
-    Ok(())
+pub fn get_test_cases(contest_id: i32, problem_index: String) -> Result<Vec<TestCase>, String> {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    match runtime.block_on(response(contest_id, problem_index)) {
+        Ok(html_response) => extract_example_test_cases(&html_response),
+        Err(e) => Err(e.to_string()),
+    }
 }

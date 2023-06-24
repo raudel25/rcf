@@ -1,4 +1,5 @@
+use rcf::clone_problem;
+
 fn main() {
-    println!("Hello, world!");
-    
+    clone_problem(1234, String::from("A"), String::from("."));
 }
