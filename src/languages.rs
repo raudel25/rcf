@@ -6,60 +6,48 @@ use std::io::Read;
 use std::io::Write;
 use std::path::PathBuf;
 
-pub enum Type {
-    Executable,
-    Normal,
-}
-pub struct Language<'a> {
-    pub compiler: &'a str,
-    pub extension: &'a str,
-    type_lang: Type,
+extern crate serde;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Config {
+    pub languages: Vec<Language>,
 }
 
-impl Language<'_> {
-    pub fn new<'a>(compiler: &'a str, extension: &'a str, type_lang: Type) -> Language<'a> {
-        Language {
-            compiler,
-            extension,
-            type_lang,
-        }
-    }
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Language {
+    pub name: String,
+    pub compiler: String,
+    pub extension: String,
+    pub source: Vec<String>,
+    pub executable: bool,
+}
+
+impl Language {
     pub fn run(&self, content: &[u8], path: &PathBuf) -> Result<Result<String, String>, String> {
-        let file = check_source_file(self.extension, path)?;
+        let file = check_source_file(self.extension.as_str(), path)?;
 
-        match self.type_lang {
-            Type::Executable => {
-                let command = format!("{} -o main {}", self.compiler, file);
+        if self.executable {
+            let command = format!("{} -o main {}", self.compiler, file);
 
-                let c = compile(command.as_str())?;
+            let c = compile(command.as_str())?;
 
-                match c {
-                    Ok(_) => {
-                        let command_run = "./main";
+            match c {
+                Ok(_) => {
+                    let command_run = "./main";
 
-                        run(command_run, content)
-                    }
-                    Err(e) => Ok(Err(e)),
+                    run(command_run, content)
                 }
+                Err(e) => Ok(Err(e)),
             }
-            Type::Normal => {
-                let command = format!("{} {}", self.compiler, file);
-                run(command.as_str(), content)
-            }
+        } else {
+            let command = format!("{} {}", self.compiler, file);
+            run(command.as_str(), content)
         }
     }
 }
 
-pub fn language_by_name<'a>(language: String) -> Result<Language<'a>, String> {
-    match language.as_str() {
-        "python" => Ok(Language::new("python3", ".py", Type::Normal)),
-        "cpp" => Ok(Language::new("g++", ".cpp", Type::Executable)),
-        "c" => Ok(Language::new("gcc", ".c", Type::Executable)),
-        _ => Err(String::from("Not found language")),
-    }
-}
-
-pub fn check_source_file(extension: &str, path: &PathBuf) -> Result<String, String> {
+fn check_source_file(extension: &str, path: &PathBuf) -> Result<String, String> {
     let files = search(extension, path);
 
     if files.len() != 1 {
@@ -118,13 +106,15 @@ pub fn create_config(path: &PathBuf, language: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn create_source(path: &PathBuf, extension: &str) -> std::io::Result<()> {
+pub fn create_source(path: &PathBuf, language: &Language) -> std::io::Result<()> {
     if !fs::metadata(&path).is_ok() {
         fs::create_dir_all(&path)?;
     }
 
-    let file_name = PathBuf::from(format!("main{}", extension));
-    File::create(path.join(file_name))?;
+    let file_name = PathBuf::from(format!("main{}", language.extension));
+    let mut source = File::create(path.join(file_name))?;
+
+    source.write_all(language.source[0].as_bytes())?;
 
     Ok(())
 }
