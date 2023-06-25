@@ -1,8 +1,12 @@
 mod contest;
+mod languages;
 mod test_cases;
+mod tester;
 
 use contest::get_problems;
+use languages::{check_source_file, compiler_extension, Languages};
 use test_cases::{get_test_cases, TestCase};
+use tester::run_tests;
 
 pub fn clone_problem(contest_id: i32, problem_index: &str, path: &str) {
     match get_test_cases(contest_id, problem_index) {
@@ -17,12 +21,26 @@ pub fn clone_contest(contest_id: i32, path: &str) {
     match runtime.block_on(get_problems(contest_id)) {
         Ok(problems) => {
             for index in problems {
-                let path = format!("{}/{}", path, index);
+                let path = format!("{}/{}", path, index.to_lowercase());
                 clone_problem(contest_id, &index, &path);
             }
         }
         Err(e) => eprintln!("{}", e.to_string()),
     };
+}
+
+pub fn test() {
+    let (compiler, extension) = compiler_extension(Languages::Python);
+
+    let file = check_source_file(extension);
+
+    match file {
+        Ok(file) => match run_tests(&format!("{} {}", compiler, file)) {
+            Ok(_) => (),
+            Err(e) => eprintln!("{}", e),
+        },
+        Err(e) => eprintln!("{}", e),
+    }
 }
 
 fn create_test_cases(test_cases: Vec<TestCase>, path: &str) {
