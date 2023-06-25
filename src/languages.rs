@@ -1,6 +1,7 @@
 use serde_json::Value;
 use std::fs;
 use std::fs::File;
+use std::io::prelude::*;
 use std::io::Read;
 
 pub enum Languages {
@@ -65,6 +66,32 @@ pub fn get_language() -> Result<String, String> {
         Some(s) => Ok(String::from(s)),
         None => Err(String::from("Not found language")),
     }
+}
+
+pub fn create_config(path: &str, language: &str) -> std::io::Result<()> {
+    if !fs::metadata(&path).is_ok() {
+        fs::create_dir_all(&path)?;
+    }
+
+    let mut config = File::create(format!("{}/config.json", path))?;
+
+    let mut aux = String::from("{ ");
+    aux.push_str(format!("\"language\":\"{}\"", language).as_str());
+    aux.push_str(" }");
+
+    config.write_all(aux.as_bytes())?;
+
+    Ok(())
+}
+
+pub fn create_source(path: &str, extension: &str) -> std::io::Result<()> {
+    if !fs::metadata(&path).is_ok() {
+        fs::create_dir_all(&path)?;
+    }
+
+    File::create(format!("{}/main.{}", path, extension))?;
+
+    Ok(())
 }
 
 pub fn search(extension: &str) -> Vec<String> {
