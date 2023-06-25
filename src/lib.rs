@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-mod config;
+pub mod config;
 mod contest;
-mod languages;
+pub mod languages;
 mod system;
 mod test_cases;
 mod tester;

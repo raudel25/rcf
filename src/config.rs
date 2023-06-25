@@ -9,7 +9,20 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
+    pub default: String,
     pub languages: Vec<Language>,
+}
+
+pub fn language_default() -> Result<Language, String> {
+    let config = get_config();
+
+    for l in config.languages {
+        if l.name == config.default {
+            return Ok(l);
+        }
+    }
+
+    Err(String::from("Not fount language"))
 }
 
 pub fn language_by_name(language: String) -> Result<Language, String> {
@@ -33,7 +46,10 @@ fn default_config() -> Config {
         executable: true,
     }];
 
-    let config = Config { languages };
+    let config = Config {
+        default: String::from("cpp"),
+        languages,
+    };
 
     let config_json = serde_json::to_string(&config).unwrap();
 

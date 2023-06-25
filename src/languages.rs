@@ -109,7 +109,7 @@ pub fn create_source(path: &PathBuf, language: &Language) -> std::io::Result<()>
     let file_name = PathBuf::from(format!("main{}", language.extension));
     let mut source = File::create(path.join(file_name))?;
 
-    source.write_all(language.source[0].as_bytes())?;
+    source.write_all("".as_bytes())?;
 
     Ok(())
 }
