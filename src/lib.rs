@@ -2,14 +2,12 @@ use std::path::PathBuf;
 
 mod contest;
 mod languages;
+mod system;
 mod test_cases;
 mod tester;
 
 use contest::get_problems;
-use languages::{
-    check_source_file, compiler_extension, create_config, create_source, get_language,
-    language_by_name,
-};
+use languages::{create_config, create_source, get_language, language_by_name};
 use test_cases::{get_test_cases, TestCase};
 use tester::run_tests;
 
@@ -19,7 +17,7 @@ pub fn clone_problem(contest_id: i32, problem_index: &str, language: &str, path:
         Err(e) => eprintln!("{}", e),
     };
 
-    let lang = match language_by_name(language) {
+    let lang = match language_by_name(language.to_string()) {
         Ok(l) => l,
         Err(e) => {
             eprintln!("{}", e);
@@ -32,7 +30,7 @@ pub fn clone_problem(contest_id: i32, problem_index: &str, language: &str, path:
         Err(e) => eprintln!("{}", e),
     };
 
-    match create_source(path, compiler_extension(lang).1) {
+    match create_source(path, lang.extension) {
         Ok(_) => (),
         Err(e) => eprintln!("{}", e),
     };
@@ -54,8 +52,8 @@ pub fn clone_contest(contest_id: i32, language: &str, path: &PathBuf) {
 
 pub fn test(path: &PathBuf) {
     let language = match get_language(path) {
-        Ok(s) => match language_by_name(&s) {
-            Ok(s) => s,
+        Ok(s) => match language_by_name(s) {
+            Ok(l) => l,
             Err(e) => {
                 eprintln!("{}", e);
                 return;
@@ -67,17 +65,10 @@ pub fn test(path: &PathBuf) {
         }
     };
 
-    let (compiler, extension) = compiler_extension(language);
-
-    let file = check_source_file(extension, path);
-
-    match file {
-        Ok(file) => match run_tests(&format!("{} {}", compiler, file), path) {
-            Ok(_) => (),
-            Err(e) => eprintln!("{}", e),
-        },
+    match run_tests(language, path) {
+        Ok(_) => (),
         Err(e) => eprintln!("{}", e),
-    }
+    };
 }
 
 fn create_test_cases(test_cases: Vec<TestCase>, path: &PathBuf) {

@@ -1,29 +1,60 @@
+use super::system::{compile, run};
 use serde_json::Value;
 use std::fs;
 use std::fs::File;
-use std::io::prelude::*;
 use std::io::Read;
+use std::io::Write;
 use std::path::PathBuf;
 
-pub enum Languages {
-    C,
-    Cpp,
-    Python,
+pub enum Type {
+    Executable,
+    Normal,
+}
+pub struct Language<'a> {
+    pub compiler: &'a str,
+    pub extension: &'a str,
+    type_lang: Type,
 }
 
-pub fn compiler_extension<'a>(language: Languages) -> (&'a str, &'a str) {
-    match language {
-        Languages::C => ("gcc -o main", ".c"),
-        Languages::Cpp => ("gcc -o main", ".cpp"),
-        Languages::Python => ("python3", ".py"),
+impl Language<'_> {
+    pub fn new<'a>(compiler: &'a str, extension: &'a str, type_lang: Type) -> Language<'a> {
+        Language {
+            compiler,
+            extension,
+            type_lang,
+        }
+    }
+    pub fn run(&self, content: &[u8], path: &PathBuf) -> Result<Result<String, String>, String> {
+        let file = check_source_file(self.extension, path)?;
+
+        match self.type_lang {
+            Type::Executable => {
+                let command = format!("{} -o main {}", self.compiler, file);
+
+                let c = compile(command.as_str())?;
+
+                match c {
+                    Ok(_) => {
+                        let command_run = "./main";
+
+                        run(command_run, content)
+                    }
+                    Err(e) => Ok(Err(e)),
+                }
+            }
+            Type::Normal => {
+                let command = format!("{} {}", self.compiler, file);
+                run(command.as_str(), content)
+            }
+        }
     }
 }
 
-pub fn language_by_name(language: &str) -> Result<Languages, String> {
-    match language {
-        "python" => Ok(Languages::Python),
-        "cpp" => Ok(Languages::Cpp),
-        "c" => Ok(Languages::C),
+pub fn language_by_name<'a>(language: String) -> Result<Language<'a>, String> {
+    match language.as_str() {
+        "python" => Ok(Language::new("python3", ".py", Type::Normal)),
+        "cpp" => Ok(Language::new("g++", ".cpp", Type::Executable)),
+        "c" => Ok(Language::new("gcc", ".c", Type::Executable)),
         _ => Err(String::from("Not found language")),
     }
 }
@@ -92,7 +123,7 @@ pub fn create_source(path: &PathBuf, extension: &str) -> std::io::Result<()> {
         fs::create_dir_all(&path)?;
     }
 
-    let file_name = PathBuf::from(format!("main.{}", extension));
+    let file_name = PathBuf::from(format!("main{}", extension));
     File::create(path.join(file_name))?;
 
     Ok(())

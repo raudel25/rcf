@@ -1,17 +1,17 @@
 use std::fs::File;
 use std::io::Read;
-use std::io::Write;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
+
+use crate::languages::Language;
 
 use super::languages::search;
 
-pub fn run_tests(command: &str, path: &PathBuf) -> Result<(), String> {
+pub fn run_tests(lang: Language, path: &PathBuf) -> Result<(), String> {
     let inputs = search(".in", path);
     let outputs = search(".out", path);
 
     for (input, output) in inputs.into_iter().zip(outputs.into_iter()) {
-        match run_test(command, input, output) {
+        match run_test(&lang, input, output, path) {
             Ok(_) => (),
             Err(e) => {
                 return Err(e);
@@ -22,7 +22,12 @@ pub fn run_tests(command: &str, path: &PathBuf) -> Result<(), String> {
     Ok(())
 }
 
-pub fn run_test(command: &str, input: String, output: String) -> Result<(), String> {
+pub fn run_test(
+    lang: &Language,
+    input: String,
+    output: String,
+    path: &PathBuf,
+) -> Result<(), String> {
     let mut input = File::open(input).unwrap();
     let mut content = Vec::new();
 
@@ -35,7 +40,7 @@ pub fn run_test(command: &str, input: String, output: String) -> Result<(), Stri
 
     let content: &[u8] = content.as_slice();
 
-    let r = run_command(command, content)?;
+    let r = lang.run(content, path)?;
 
     match r {
         Ok(out) => {
@@ -53,51 +58,6 @@ pub fn run_test(command: &str, input: String, output: String) -> Result<(), Stri
     };
 
     Ok(())
-}
-
-fn run_command(command: &str, content: &[u8]) -> Result<Result<String, String>, String> {
-    let commands: Vec<_> = command.split_whitespace().into_iter().collect();
-
-    let mut child = match Command::new(commands[0])
-        .args(&commands[1..commands.len()])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-    {
-        Ok(c) => c,
-        Err(e) => {
-            return Err(e.to_string());
-        }
-    };
-
-    if let Some(stdin) = child.stdin.as_mut() {
-        match stdin.write_all(content) {
-            Ok(s) => s,
-            Err(e) => {
-                return Err(e.to_string());
-            }
-        }
-    }
-
-    let output = match child.wait_with_output() {
-        Ok(o) => o,
-        Err(e) => {
-            return Err(e.to_string());
-        }
-    };
-
-    if !output.status.success() {
-        return match String::from_utf8(output.stderr) {
-            Ok(e) => Ok(Err(e)),
-            Err(e) => Err(e.to_string()),
-        };
-    }
-
-    match String::from_utf8(output.stdout) {
-        Ok(o) => Ok(Ok(o)),
-        Err(e) => Err(e.to_string()),
-    }
 }
 
 fn check_out(output: String, out: String) -> Result<bool, String> {

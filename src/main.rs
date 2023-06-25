@@ -2,6 +2,7 @@ use rcf::{clone_contest, clone_problem, test};
 use std::path::PathBuf;
 
 fn main() {
-    test(&PathBuf::from("q"));
-    // clone_problem(1842, "A", "cpp", ".");
+    let path = &PathBuf::from("a");
+    // clone_problem(1842, "A", "cpp", path);
+    test(path);
 }
