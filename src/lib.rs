@@ -4,7 +4,7 @@ mod test_cases;
 mod tester;
 
 use contest::get_problems;
-use languages::{check_source_file, compiler_extension, Languages};
+use languages::{check_source_file, compiler_extension, get_language, language_by_name};
 use test_cases::{get_test_cases, TestCase};
 use tester::run_tests;
 
@@ -30,7 +30,21 @@ pub fn clone_contest(contest_id: i32, path: &str) {
 }
 
 pub fn test() {
-    let (compiler, extension) = compiler_extension(Languages::Python);
+    let language = match get_language() {
+        Ok(s) => match language_by_name(&s) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("{}", e);
+                return;
+            }
+        },
+        Err(e) => {
+            eprintln!("{}", e);
+            return;
+        }
+    };
+
+    let (compiler, extension) = compiler_extension(language);
 
     let file = check_source_file(extension);
 

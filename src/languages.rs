@@ -1,4 +1,7 @@
+use serde_json::Value;
 use std::fs;
+use std::fs::File;
+use std::io::Read;
 
 pub enum Languages {
     C,
@@ -14,6 +17,15 @@ pub fn compiler_extension<'a>(language: Languages) -> (&'a str, &'a str) {
     }
 }
 
+pub fn language_by_name(language: &str) -> Result<Languages, String> {
+    match language {
+        "python" => Ok(Languages::Python),
+        "cpp" => Ok(Languages::Cpp),
+        "c" => Ok(Languages::C),
+        _ => Err(String::from("Not found language")),
+    }
+}
+
 pub fn check_source_file(extension: &str) -> Result<String, String> {
     let files = search(extension);
 
@@ -24,6 +36,35 @@ pub fn check_source_file(extension: &str) -> Result<String, String> {
     }
 
     Ok(files[0].clone())
+}
+
+pub fn get_language() -> Result<String, String> {
+    let mut config = match File::open("config.json") {
+        Ok(c) => c,
+        Err(_) => {
+            return Err(String::from("Not found language"));
+        }
+    };
+
+    let mut content = String::new();
+    match config.read_to_string(&mut content) {
+        Ok(_) => (),
+        Err(e) => {
+            return Err(e.to_string());
+        }
+    };
+
+    let config: Value = match serde_json::from_str(&content) {
+        Ok(s) => s,
+        Err(_) => {
+            return Err(String::from("Not found language"));
+        }
+    };
+
+    match config["language"].as_str() {
+        Some(s) => Ok(String::from(s)),
+        None => Err(String::from("Not found language")),
+    }
 }
 
 pub fn search(extension: &str) -> Vec<String> {
