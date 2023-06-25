@@ -27,8 +27,8 @@ pub fn language_by_name(language: &str) -> Result<Languages, String> {
     }
 }
 
-pub fn check_source_file(extension: &str) -> Result<String, String> {
-    let files = search(extension);
+pub fn check_source_file(extension: &str, path: &str) -> Result<String, String> {
+    let files = search(extension, path);
 
     if files.len() != 1 {
         return Err(String::from(
@@ -39,8 +39,8 @@ pub fn check_source_file(extension: &str) -> Result<String, String> {
     Ok(files[0].clone())
 }
 
-pub fn get_language() -> Result<String, String> {
-    let mut config = match File::open("config.json") {
+pub fn get_language(path: &str) -> Result<String, String> {
+    let mut config = match File::open(format!("{}/config.json", path)) {
         Ok(c) => c,
         Err(_) => {
             return Err(String::from("Not found language"));
@@ -94,8 +94,8 @@ pub fn create_source(path: &str, extension: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn search(extension: &str) -> Vec<String> {
-    let files: Vec<_> = fs::read_dir(".")
+pub fn search(extension: &str, path: &str) -> Vec<String> {
+    let files: Vec<_> = fs::read_dir(path)
         .unwrap()
         .filter_map(|entry_res| {
             let entry = entry_res.unwrap();
@@ -115,7 +115,9 @@ pub fn search(extension: &str) -> Vec<String> {
         .collect();
 
     files
-        .into_iter()
-        .map(|s| String::from(&s[2..s.len()]))
-        .collect()
+
+    // files
+    //     .into_iter()
+    //     .map(|s| String::from(&s[2..s.len()]))
+    //     .collect()
 }

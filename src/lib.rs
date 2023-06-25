@@ -50,8 +50,8 @@ pub fn clone_contest(contest_id: i32, language: &str, path: &str) {
     };
 }
 
-pub fn test() {
-    let language = match get_language() {
+pub fn test(path: &str) {
+    let language = match get_language(path) {
         Ok(s) => match language_by_name(&s) {
             Ok(s) => s,
             Err(e) => {
@@ -67,10 +67,10 @@ pub fn test() {
 
     let (compiler, extension) = compiler_extension(language);
 
-    let file = check_source_file(extension);
+    let file = check_source_file(extension, path);
 
     match file {
-        Ok(file) => match run_tests(&format!("{} {}", compiler, file)) {
+        Ok(file) => match run_tests(&format!("{} {}", compiler, file), path) {
             Ok(_) => (),
             Err(e) => eprintln!("{}", e),
         },

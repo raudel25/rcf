@@ -5,9 +5,9 @@ use std::process::{Command, Stdio};
 
 use super::languages::search;
 
-pub fn run_tests(command: &str) -> Result<(), String> {
-    let inputs = search(".in");
-    let outputs = search(".out");
+pub fn run_tests(command: &str, path: &str) -> Result<(), String> {
+    let inputs = search(".in", path);
+    let outputs = search(".out", path);
 
     for (input, output) in inputs.into_iter().zip(outputs.into_iter()) {
         match run_test(command, input, output) {
