@@ -3,6 +3,7 @@ use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::Read;
+use std::path::PathBuf;
 
 pub enum Languages {
     C,
@@ -27,7 +28,7 @@ pub fn language_by_name(language: &str) -> Result<Languages, String> {
     }
 }
 
-pub fn check_source_file(extension: &str, path: &str) -> Result<String, String> {
+pub fn check_source_file(extension: &str, path: &PathBuf) -> Result<String, String> {
     let files = search(extension, path);
 
     if files.len() != 1 {
@@ -39,8 +40,9 @@ pub fn check_source_file(extension: &str, path: &str) -> Result<String, String> 
     Ok(files[0].clone())
 }
 
-pub fn get_language(path: &str) -> Result<String, String> {
-    let mut config = match File::open(format!("{}/config.json", path)) {
+pub fn get_language(path: &PathBuf) -> Result<String, String> {
+    let file_name = PathBuf::from("config.json");
+    let mut config = match File::open(path.join(file_name)) {
         Ok(c) => c,
         Err(_) => {
             return Err(String::from("Not found language"));
@@ -68,12 +70,13 @@ pub fn get_language(path: &str) -> Result<String, String> {
     }
 }
 
-pub fn create_config(path: &str, language: &str) -> std::io::Result<()> {
+pub fn create_config(path: &PathBuf, language: &str) -> std::io::Result<()> {
     if !fs::metadata(&path).is_ok() {
         fs::create_dir_all(&path)?;
     }
 
-    let mut config = File::create(format!("{}/config.json", path))?;
+    let file_name = PathBuf::from("config.json");
+    let mut config = File::create(path.join(file_name))?;
 
     let mut aux = String::from("{ ");
     aux.push_str(format!("\"language\":\"{}\"", language).as_str());
@@ -84,17 +87,18 @@ pub fn create_config(path: &str, language: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn create_source(path: &str, extension: &str) -> std::io::Result<()> {
+pub fn create_source(path: &PathBuf, extension: &str) -> std::io::Result<()> {
     if !fs::metadata(&path).is_ok() {
         fs::create_dir_all(&path)?;
     }
 
-    File::create(format!("{}/main.{}", path, extension))?;
+    let file_name = PathBuf::from(format!("main.{}", extension));
+    File::create(path.join(file_name))?;
 
     Ok(())
 }
 
-pub fn search(extension: &str, path: &str) -> Vec<String> {
+pub fn search(extension: &str, path: &PathBuf) -> Vec<String> {
     let files: Vec<_> = fs::read_dir(path)
         .unwrap()
         .filter_map(|entry_res| {
@@ -109,15 +113,8 @@ pub fn search(extension: &str, path: &str) -> Vec<String> {
         })
         .collect();
 
-    let files: Vec<_> = files
+    files
         .into_iter()
         .map(|p| String::from(p.to_str().unwrap()))
-        .collect();
-
-    files
-
-    // files
-    //     .into_iter()
-    //     .map(|s| String::from(&s[2..s.len()]))
-    //     .collect()
+        .collect()
 }

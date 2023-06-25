@@ -1,6 +1,6 @@
-use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
+use std::{fs, path::PathBuf};
 
 extern crate reqwest;
 extern crate scraper;
@@ -23,15 +23,17 @@ impl TestCase {
         }
     }
 
-    pub fn create(&self, path: &str) -> std::io::Result<()> {
+    pub fn create(&self, path: &PathBuf) -> std::io::Result<()> {
         if !fs::metadata(&path).is_ok() {
             fs::create_dir_all(&path)?;
         }
 
-        let mut f_in = File::create(format!("{}/{}.in", path, self.name))?;
+        let file_name = PathBuf::from(format!("{}.in", self.name));
+        let mut f_in = File::create(path.join(file_name))?;
         f_in.write_all(self.input.as_bytes())?;
 
-        let mut f_out = File::create(format!("{}/{}.out", path, self.name))?;
+        let file_name = PathBuf::from(format!("{}.out", self.name));
+        let mut f_out = File::create(path.join(file_name))?;
         f_out.write_all(self.output.as_bytes())?;
 
         Ok(())

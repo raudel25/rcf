@@ -1,11 +1,12 @@
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use super::languages::search;
 
-pub fn run_tests(command: &str, path: &str) -> Result<(), String> {
+pub fn run_tests(command: &str, path: &PathBuf) -> Result<(), String> {
     let inputs = search(".in", path);
     let outputs = search(".out", path);
 
