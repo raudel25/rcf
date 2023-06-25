@@ -10,11 +10,6 @@ extern crate serde;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Config {
-    pub languages: Vec<Language>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct Language {
     pub name: String,
     pub compiler: String,
