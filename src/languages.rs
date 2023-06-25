@@ -40,6 +40,47 @@ impl Language {
             run(command.as_str(), content)
         }
     }
+
+    fn source_code(&self) -> String {
+        let mut s = String::new();
+
+        for i in &self.source {
+            s.push_str(i.as_str());
+            s.push('\n');
+        }
+
+        s
+    }
+
+    pub fn create_config(&self, path: &PathBuf) -> std::io::Result<()> {
+        if !fs::metadata(&path).is_ok() {
+            fs::create_dir_all(&path)?;
+        }
+
+        let file_name = PathBuf::from("config.json");
+        let mut config = File::create(path.join(file_name))?;
+
+        let mut aux = String::from("{ ");
+        aux.push_str(format!("\"language\":\"{}\"", self.name).as_str());
+        aux.push_str(" }");
+
+        config.write_all(aux.as_bytes())?;
+
+        Ok(())
+    }
+
+    pub fn create_source(&self, path: &PathBuf) -> std::io::Result<()> {
+        if !fs::metadata(&path).is_ok() {
+            fs::create_dir_all(&path)?;
+        }
+
+        let file_name = PathBuf::from(format!("main{}", self.extension));
+        let mut source = File::create(path.join(file_name))?;
+
+        source.write_all(self.source_code().as_bytes())?;
+
+        Ok(())
+    }
 }
 
 fn check_source_file(extension: &str, path: &PathBuf) -> Result<String, String> {
@@ -82,36 +123,6 @@ pub fn get_language(path: &PathBuf) -> Result<String, String> {
         Some(s) => Ok(String::from(s)),
         None => Err(String::from("Not found language")),
     }
-}
-
-pub fn create_config(path: &PathBuf, language: &str) -> std::io::Result<()> {
-    if !fs::metadata(&path).is_ok() {
-        fs::create_dir_all(&path)?;
-    }
-
-    let file_name = PathBuf::from("config.json");
-    let mut config = File::create(path.join(file_name))?;
-
-    let mut aux = String::from("{ ");
-    aux.push_str(format!("\"language\":\"{}\"", language).as_str());
-    aux.push_str(" }");
-
-    config.write_all(aux.as_bytes())?;
-
-    Ok(())
-}
-
-pub fn create_source(path: &PathBuf, language: &Language) -> std::io::Result<()> {
-    if !fs::metadata(&path).is_ok() {
-        fs::create_dir_all(&path)?;
-    }
-
-    let file_name = PathBuf::from(format!("main{}", language.extension));
-    let mut source = File::create(path.join(file_name))?;
-
-    source.write_all("".as_bytes())?;
-
-    Ok(())
 }
 
 pub fn search(extension: &str, path: &PathBuf) -> Vec<String> {

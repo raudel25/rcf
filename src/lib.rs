@@ -9,7 +9,7 @@ mod tester;
 
 use config::language_by_name;
 use contest::get_problems;
-use languages::{create_config, create_source, get_language, Language};
+use languages::{get_language, Language};
 use test_cases::{get_test_cases, TestCase};
 use tester::run_tests;
 
@@ -19,12 +19,12 @@ pub fn clone_problem(contest_id: i32, problem_index: &str, language: &Language, 
         Err(e) => eprintln!("{}", e),
     };
 
-    match create_config(path, &language.name) {
+    match language.create_config(path) {
         Ok(_) => (),
         Err(e) => eprintln!("{}", e),
     };
 
-    match create_source(path, language) {
+    match language.create_source(path) {
         Ok(_) => (),
         Err(e) => eprintln!("{}", e),
     };
