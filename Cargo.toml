@@ -2,6 +2,10 @@
 name = "rcf"
 version = "0.1.0"
 edition = "2021"
+authors = ["Raudel Alejandro Gómez Molina <raudel.gmolina@gmail.com>"]
+readme = "README.md"
+license-file = "LICENCE"
+repository = "https://github.com/raudel25/rcf"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
