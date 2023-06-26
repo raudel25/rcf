@@ -13,20 +13,27 @@ use languages::{get_language, Language};
 use test_cases::{get_test_cases, TestCase};
 use tester::run_tests;
 
+extern crate colored;
+use colored::*;
+
+pub fn error(e: String) {
+    eprintln!("{} {}", "rsh:".red(), e);
+}
+
 pub fn clone_problem(contest_id: i32, problem_index: &str, language: &Language, path: &PathBuf) {
     match get_test_cases(contest_id, problem_index) {
         Ok(test_cases) => create_test_cases(test_cases, path),
-        Err(e) => eprintln!("{}", e),
+        Err(e) => error(e),
     };
 
     match language.create_config(path) {
         Ok(_) => (),
-        Err(e) => eprintln!("{}", e),
+        Err(e) => error(e.to_string()),
     };
 
     match language.create_source(path) {
         Ok(_) => (),
-        Err(e) => eprintln!("{}", e),
+        Err(e) => error(e.to_string()),
     };
 }
 
@@ -40,7 +47,7 @@ pub fn clone_contest(contest_id: i32, language: &Language, path: &PathBuf) {
                 clone_problem(contest_id, &index, language, &path.join(folder));
             }
         }
-        Err(e) => eprintln!("{}", e.to_string()),
+        Err(e) => error(e.to_string()),
     };
 }
 
@@ -49,19 +56,19 @@ pub fn test(path: &PathBuf) {
         Ok(s) => match language_by_name(s) {
             Ok(l) => l,
             Err(e) => {
-                eprintln!("{}", e);
+                error(e);
                 return;
             }
         },
         Err(e) => {
-            eprintln!("{}", e);
+            error(e);
             return;
         }
     };
 
     match run_tests(language, path) {
         Ok(_) => (),
-        Err(e) => eprintln!("{}", e),
+        Err(e) => error(e),
     };
 }
 
@@ -69,7 +76,7 @@ fn create_test_cases(test_cases: Vec<TestCase>, path: &PathBuf) {
     for test_case in test_cases {
         match test_case.create(path) {
             Ok(_) => (),
-            Err(e) => eprintln!("{}", e.to_string()),
+            Err(e) => error(e.to_string()),
         }
     }
 }

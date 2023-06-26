@@ -1,4 +1,4 @@
-use rcf::{clone_contest, clone_problem, languages::Language, test};
+use rcf::{clone_contest, clone_problem, error, languages::Language, test};
 use std::env;
 use std::path::PathBuf;
 
@@ -8,7 +8,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("Wrong parameters");
+        error(String::from("Wrong parameters"));
         return;
     }
 
@@ -16,7 +16,15 @@ fn main() {
         "contest" => contest(&args),
         "problem" => problem(&args),
         "test" => test_e(&args),
-        _ => eprintln!("Command not found"),
+        "config" => config_e(),
+        _ => error(String::from("Command not found")),
+    }
+}
+
+fn config_e() {
+    match language_default() {
+        Ok(_) => (),
+        Err(e) => error(e),
     }
 }
 
@@ -32,14 +40,14 @@ fn get_language(arg: &str) -> Result<Language, String> {
 
 fn contest(args: &Vec<String>) {
     if args.len() < 3 {
-        eprintln!("Wrong parameters");
+        error(String::from("Wrong parameters"));
         return;
     }
 
     let contest_id = match args[2].parse::<i32>() {
         Ok(n) => n,
         Err(_) => {
-            eprintln!("Wrong parameters");
+            error(String::from("Wrong parameters"));
             return;
         }
     };
@@ -59,7 +67,7 @@ fn contest(args: &Vec<String>) {
     let language = match language {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("{}", e);
+            error(e);
             return;
         }
     };
@@ -69,14 +77,14 @@ fn contest(args: &Vec<String>) {
 
 fn problem(args: &Vec<String>) {
     if args.len() < 4 {
-        eprintln!("Wrong parameters");
+        error(String::from("Wrong parameters"));
         return;
     }
 
     let contest_id = match args[2].parse::<i32>() {
         Ok(n) => n,
         Err(_) => {
-            eprintln!("Wrong parameters");
+            error(String::from("Wrong parameters"));
             return;
         }
     };
@@ -96,7 +104,7 @@ fn problem(args: &Vec<String>) {
     let language = match language {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("{}", e);
+            error(e);
             return;
         }
     };
@@ -106,7 +114,7 @@ fn problem(args: &Vec<String>) {
 
 fn test_e(args: &Vec<String>) {
     if args.len() < 2 {
-        eprintln!("Wrong parameters");
+        error(String::from("Wrong parameters"));
         return;
     }
 

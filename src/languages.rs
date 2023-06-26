@@ -100,7 +100,7 @@ pub fn get_language(path: &PathBuf) -> Result<String, String> {
     let mut config = match File::open(path.join(file_name)) {
         Ok(c) => c,
         Err(_) => {
-            return Err(String::from("Not found language"));
+            return Err(String::from("Language not found"));
         }
     };
 
@@ -115,13 +115,13 @@ pub fn get_language(path: &PathBuf) -> Result<String, String> {
     let config: Value = match serde_json::from_str(&content) {
         Ok(s) => s,
         Err(_) => {
-            return Err(String::from("Not found language"));
+            return Err(String::from("Language not found"));
         }
     };
 
     match config["language"].as_str() {
         Some(s) => Ok(String::from(s)),
-        None => Err(String::from("Not found language")),
+        None => Err(String::from("Language not found")),
     }
 }
 
